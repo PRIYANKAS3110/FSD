@@ -1,20 +1,24 @@
-# Use the official Node.js base image
-FROM node:18-alpine
-
-# Set the working directory
+# Install dependencies only when needed
+FROM node:18-alpine AS deps
 WORKDIR /app
-
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install dependencies
+COPY package.json package-lock.json* ./
 RUN npm install
 
-# Copy the rest of the application code
+# Rebuild the source code only when needed
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npm run build
 
-# Expose the development port
+# Production image, copy the necessary files
+FROM node:18-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV production
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/public ./public
+COPY package.json ./
+
 EXPOSE 3000
-
-# Default command to run the application in development mode
-CMD ["npm", "run", "dev"]
+CMD ["npm", "start"]
