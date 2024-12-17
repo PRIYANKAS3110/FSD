@@ -1,24 +1,16 @@
-# Install dependencies only when needed
-FROM node:18-alpine AS deps
+FROM node:20
+
+# Set the working directory
 WORKDIR /app
+
+# Copy package files and install dependencies
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm config set unsafe-perm true
+RUN npm install --registry=https://registry.npmjs.org --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=60000
 
-# Rebuild the source code only when needed
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy application source code
 COPY . .
-RUN npm run build
 
-# Production image, copy the necessary files
-FROM node:18-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV production
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/public ./public
-COPY package.json ./
-
+# Expose port and define the start command
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "app.js"]  # Replace with your app's entry point
