@@ -5,8 +5,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json* ./
-RUN npm config set unsafe-perm true
-RUN npm install --registry=https://registry.npmjs.org --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=60000
+RUN npm install 
 
 # Copy application source code
 COPY . .
